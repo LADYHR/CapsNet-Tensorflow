@@ -1,8 +1,8 @@
 import os
 import sys
 import gzip
-import shutil
-from six.moves import urllib
+import shutil#用来拷贝文件
+from six.moves import urllib#six用来兼容py2\py3，moves用来屏蔽掉函数位置有变化，urllib用来获取URL
 
 # mnist dataset
 HOMEPAGE = "http://yann.lecun.com/exdb/mnist/"
@@ -67,7 +67,7 @@ def start_download(dataset, save_to, force):
     else:
         raise Exception("Invalid dataset name! please check it: ", dataset)
 
-if __name__ == '__main__':
+if __name__ == '__main__':#当py文件被直接运行时，执行以下程序，当py文件被当做模块导入时，不执行
     import argparse
     parser = argparse.ArgumentParser('Script for automatically downloading datasets')
     parser.add_argument("--dataset", default='mnist', choices=['mnist', 'fashion-mnist', 'smallNORB'])
