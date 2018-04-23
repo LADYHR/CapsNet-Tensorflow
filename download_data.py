@@ -67,7 +67,8 @@ def start_download(dataset, save_to, force):
     else:
         raise Exception("Invalid dataset name! please check it: ", dataset)
 
-if __name__ == '__main__':#当py文件被直接运行时，执行以下程序，当py文件被当做模块导入时，不执行
+
+if __name__ == '__main__':  # 当py文件被直接运行时，执行以下程序，当py文件被当做模块导入时，不执行
     import argparse
     parser = argparse.ArgumentParser('Script for automatically downloading datasets')
     parser.add_argument("--dataset", default='mnist', choices=['mnist', 'fashion-mnist', 'smallNORB'])
