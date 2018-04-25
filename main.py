@@ -8,6 +8,8 @@ from config import cfg
 from utils import load_data
 from capsNet import CapsNet
 
+tf.logging.set_verbosity(tf.logging.INFO)
+
 
 def save_to():
     if not os.path.exists(cfg.results):
@@ -45,8 +47,8 @@ def train(model, supervisor, num_label):
     Y = valY[:num_val_batch * cfg.batch_size].reshape((-1, 1))
 
     fd_train_acc, fd_loss, fd_val_acc = save_to()
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
+    config = tf.ConfigProto()  # 用于创建session的时候对session进行参数配置
+    config.gpu_options.allow_growth = True  # 刚开始配置少量GPU内存，然后按需慢慢增加（不会释放内存，会导致碎片）
     with supervisor.managed_session(config=config) as sess:
         print("\nNote: all of results will be saved to directory: " + cfg.results)
         for epoch in range(cfg.epoch):
@@ -59,19 +61,19 @@ def train(model, supervisor, num_label):
                 end = start + cfg.batch_size
                 global_step = epoch * num_tr_batch + step
 
-                if global_step % cfg.train_sum_freq == 0:
+                if global_step % cfg.train_sum_freq == 0:  # 每100个mini-batch进行一次total_loss、accuracy、train_summary的记录
                     _, loss, train_acc, summary_str = sess.run([model.train_op, model.total_loss, model.accuracy, model.train_summary])
                     assert not np.isnan(loss), 'Something wrong! loss is nan...'
                     supervisor.summary_writer.add_summary(summary_str, global_step)
 
                     fd_loss.write(str(global_step) + ',' + str(loss) + "\n")
-                    fd_loss.flush()
+                    fd_loss.flush()  # 刷新缓冲区
                     fd_train_acc.write(str(global_step) + ',' + str(train_acc / cfg.batch_size) + "\n")
                     fd_train_acc.flush()
                 else:
-                    sess.run(model.train_op)
+                    sess.run(model.train_op)  # 每个mini-batch进行一次模型的优化
 
-                if cfg.val_sum_freq != 0 and (global_step) % cfg.val_sum_freq == 0:
+                if cfg.val_sum_freq != 0 and (global_step) % cfg.val_sum_freq == 0:  # 每500个mini-batch进行一次验证
                     val_acc = 0
                     for i in range(num_val_batch):
                         start = i * cfg.batch_size
@@ -84,6 +86,7 @@ def train(model, supervisor, num_label):
 
             if (epoch + 1) % cfg.save_freq == 0:
                 supervisor.saver.save(sess, cfg.logdir + '/model_epoch_%04d_step_%02d' % (epoch, global_step))
+                # 如果没有saver，模型不会自动保存
 
         fd_val_acc.close()
         fd_train_acc.close()
@@ -94,7 +97,7 @@ def evaluation(model, supervisor, num_label):
     teX, teY, num_te_batch = load_data(cfg.dataset, cfg.batch_size, is_training=False)
     fd_test_acc = save_to()
     with supervisor.managed_session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        supervisor.saver.restore(sess, tf.train.latest_checkpoint(cfg.logdir))
+        supervisor.saver.restore(sess, tf.train.latest_checkpoint(cfg.logdir))  # 重新导入模型
         tf.logging.info('Model restored!')
 
         test_acc = 0
@@ -121,8 +124,10 @@ def main(_):
         tf.logging.info(' Start training...')
         train(model, sv, num_label)
         tf.logging.info('Training done')
+        print('Training done!')
     else:
         evaluation(model, sv, num_label)
+        print('Evaluation done!')
 
 
 if __name__ == "__main__":
