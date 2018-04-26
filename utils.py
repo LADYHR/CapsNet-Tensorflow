@@ -86,12 +86,12 @@ def get_batch_data(dataset, batch_size, num_threads):
         trX, trY, num_tr_batch, valX, valY, num_val_batch = load_mnist(batch_size, is_training=True)
     elif dataset == 'fashion-mnist':
         trX, trY, num_tr_batch, valX, valY, num_val_batch = load_fashion_mnist(batch_size, is_training=True)
-    data_queues = tf.train.slice_input_producer([trX, trY])
-    X, Y = tf.train.shuffle_batch(data_queues, num_threads=num_threads,
+    data_queues = tf.train.slice_input_producer([trX, trY])  # 不指定num_epoch可以循环无数次slice
+    X, Y = tf.train.shuffle_batch(data_queues, num_threads=num_threads,  # 入队‘tensor_list'的线程数量
                                   batch_size=batch_size,
-                                  capacity=batch_size * 64,
-                                  min_after_dequeue=batch_size * 32,
-                                  allow_smaller_final_batch=False)
+                                  capacity=batch_size * 64,  # 能放在队列里的元素的最大个数
+                                  min_after_dequeue=batch_size * 32,  # 出列操作后队列里的最小元素数量，决定队列里数据的混合程度
+                                  allow_smaller_final_batch=False)  # 多余的不够一个mini-batch的数据会被舍弃
 
     return(X, Y)
 
